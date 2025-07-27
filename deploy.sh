@@ -92,14 +92,15 @@ else
 fi
 
 # Create volume directories with proper permissions
-echo "Creating volume directories..."
+print_step "Creating volume directories..."
 mkdir -p ./volumes/uploads ./volumes/userfiles ./volumes/mysql
 
-# Set proper ownership - make volumes accessible to container user (1001)
+# Set proper ownership and permissions - make volumes accessible to container user (1001)
 # This ensures the container can read/write to mounted volumes
+print_status "Setting directory ownership and permissions..."
 sudo chown -R 1001:1001 ./volumes/uploads ./volumes/userfiles
-chmod -R 755 ./volumes/uploads ./volumes/userfiles
-echo "Volume directories created and permissions set."
+sudo chmod -R 755 ./volumes/uploads ./volumes/userfiles
+print_status "Volume directories created and permissions set."
 
 # Configure firewall (optional)
 read -p "Do you want to configure firewall? (y/N): " -n 1 -r
