@@ -91,17 +91,15 @@ else
     USE_SUDO="sudo"
 fi
 
-# Create necessary directories
-print_step "Creating application directories..."
-mkdir -p volumes/{mysql_data,uploads,userfiles,mysql_logs,backend_logs}
-mkdir -p backups
+# Create volume directories with proper permissions
+echo "Creating volume directories..."
+mkdir -p ./volumes/uploads ./volumes/userfiles ./volumes/mysql
 
-# Set proper permissions
-chmod 755 volumes/
-chmod 755 volumes/*
-chmod 755 backups/
-
-print_status "Created volume directories successfully"
+# Set proper ownership - make volumes accessible to container user (1001)
+# This ensures the container can read/write to mounted volumes
+sudo chown -R 1001:1001 ./volumes/uploads ./volumes/userfiles
+chmod -R 755 ./volumes/uploads ./volumes/userfiles
+echo "Volume directories created and permissions set."
 
 # Configure firewall (optional)
 read -p "Do you want to configure firewall? (y/N): " -n 1 -r

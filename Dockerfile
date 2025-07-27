@@ -34,7 +34,8 @@ RUN addgroup -g 1001 appgroup && adduser -u 1001 -G appgroup -s /bin/sh -D appus
 # Create necessary directories
 WORKDIR /app
 RUN mkdir -p uploads userfiles logs && \
-    chown -R appuser:appgroup /app
+    chown -R appuser:appgroup /app && \
+    chmod 755 uploads userfiles logs
 
 # Copy binary from builder stage
 COPY --from=builder /app/main .
