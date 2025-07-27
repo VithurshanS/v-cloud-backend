@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: vcloud-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: vithu
+      MYSQL_DATABASE: vcloud
+      MYSQL_USER: vcloud_user
+      MYSQL_PASSWORD: vcloud_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./volumes/mysql_data:/var/lib/mysql
+      - ./database_setup.sql:/docker-entrypoint-initdb.d/01-setup.sql:ro
+    networks:
+      - vcloud-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pvithu"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # V-Cloud Backend Service
+  vcloud-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vcloud-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./volumes/uploads:/app/uploads
+      - ./volumes/userfiles:/app/userfiles
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=vithu
+      - DB_NAME=vcloud
+      - GIN_MODE=release
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - vcloud-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # phpMyAdmin (Optional - for database management)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: vcloud-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: vithu
+      MYSQL_ROOT_PASSWORD: vithu
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - vcloud-network
+
+# Networks
+networks:
+  vcloud-network:
+    driver: bridge
